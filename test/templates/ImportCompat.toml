@@ -1,0 +1,3 @@
+import compat
+{% include "Compat.toml" %}
+end import compat

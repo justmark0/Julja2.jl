@@ -1,0 +1,8 @@
+name = {{ name }}
+uuid = {{ uuid }}
+version = {{ version }}
+{% if !isempty(deps) %}
+[deps]
+{% for (dep, uuid) in deps %}{{ dep }} = {{ uuid }}
+{% endfor %}
+{% include "Compat.toml" %}{% endif %}

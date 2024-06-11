@@ -7,41 +7,37 @@ Represents a parsed template with executable generator code.
 - `generator_code::Expr`: The expression that generates the code for the template.
 """
 struct Julja2ParsedTemplate
-generator_code::Expr
+    generator_code::Expr
 end
 
-"""
-    BlockBorders
-
-This structure contains borders of block.
-
-## Fields:
-- `left::String`: The left border string.
-- `left_length::Int`: The length of the left border.
-- `right::String`: The right border string.
-- `right_length::Int`: The length of the right border.
-"""
-mutable struct BlockBorders
-    left::String
-    left_length::Int
-    right::String
-    right_length::Int
-
-    function BlockBorders(left::String, right::String)
-        # Get UInt8 string length because unicode characters may be more than one byte.
-        new(
-            left,
-            length(transcode(UInt8, left)),
-            right,
-            length(transcode(UInt8, right))
-        )
+function _validate_options(options::TemplateOptions)
+    if !isa(options.var.left, String) || options.var.left == ""
+        error("left border of variable block must be a non empty string")
+    end
+    if !isa(options.var.right, String) || options.var.right == ""
+        error("right border of variable block must be a non empty string")
+    end
+    if !isa(options.operator.left, String) || options.operator.left == ""
+        error("left border of operators block must be a non empty string")
+    end
+    if !isa(options.operator.right, String) || options.operator.right == ""
+        error("right border of operators block must be a non empty string")
     end
 end
 
+function _format_template_dir_path(templates_dir::String)::String
+    if templates_dir == ""
+        error("templates_dir must be a non empty string witn \"/\" in the end.")
+    end 
+    if templates_dir[end] != '/'
+        @warn "templates_dir does not have \"/\" in the end, added \"/\" to the end."
+        return templates_dir * "/"
+    end
+    return templates_dir
+end
+
 """
-    Julja2Template(template::String; var_borders::BlockBorders=BlockBorders("{{", "}}"), 
-    operator_borders::BlockBorders=BlockBorders("{%", "%}"), templates_dir::String="./", 
-    ignore_missing_vars=true, allow_filename_change_dir=false) -> Julja2ParsedTemplate
+    Julja2Template(template::String; kw...) -> Julja2ParsedTemplate
 
 Creates an executable template to create result string.
 
@@ -49,50 +45,57 @@ Creates an executable template to create result string.
 - `template::String`: The template string to parse.
 
 ## Optional parameters:
-- `var_borders::BlockBorders`: Borders for variable blocks (default: `BlockBorders("{{", "}}")`).
-- `operator_borders::BlockBorders`: Borders for operator blocks (default: `BlockBorders("{%", "%}")`).
+- `var::BlockBorders`: Borders for variable blocks (default: `BlockBorders("{{", "}}")`).
+- `operator::BlockBorders`: Borders for operator blocks (default: `BlockBorders("{%", "%}")`).
 - `templates_dir::String`: Path (relative or absolute) to files that will be included with `{% include %}` operator (default: `"./"`).
-- `ignore_missing_vars::Bool`: If true, raises an error if a variable in `{{ variable_block }}` is missing (default: `true`).
-- `allow_filename_change_dir::Bool`: Recommended to set to true as it could be a potential vulnerability. It forbids "/" in file names to prevent directory changes in Unix systems (default: `false`).
+- `ignore_missing::Bool`: If true, raises an error if a variable in `{{ variable_block }}` is missing (default: `true`).
+- `allow_filename_change_dir::Bool`: Recommended to set to true as it could be a potential vulnerability. 
+It forbids "/" in file names to prevent directory changes in Unix systems (default: `false`).
 
 ## Returns:
 - `Julja2ParsedTemplate`: The parsed template object.
 """
-function Julja2Template(template::String;
-                var_borders::BlockBorders=BlockBorders("{{", "}}"),
-                operator_borders::BlockBorders=BlockBorders("{%", "%}"),
-                templates_dir::String="./",
-                ignore_missing_vars=true,
-                allow_filename_change_dir=false)::Julja2ParsedTemplate
+function Julja2Template(
+    template::String;
+    variable::BlockBorders=BlockBorders("{{", "}}"),
+    operator::BlockBorders=BlockBorders("{%", "%}"),
+    templates_dir::String="./",
+    ignore_missing=true,
+    allow_filename_change_dir=false,
+)::Julja2ParsedTemplate
 
     template_dir_path = _format_template_dir_path(templates_dir)
-    template_options = TemplateOptions(
-        var_borders, operator_borders, template_dir_path,
-        ignore_missing_vars, allow_filename_change_dir)
-    _validate_options(template_options)
+    options = TemplateOptions(
+        variable, 
+        operator, 
+        template_dir_path,
+        ignore_missing,
+        allow_filename_change_dir
+    )
+    _validate_options(options)
 
-    root = Node("""function build_result_string()\n_result=IOBuffer()\n""", [])
-    build_tree!(template, 1, root, Vector{Julja2.TokenType}(), template_options)
-    generator_code = build_code(root)
-    generator_code *= "\nreturn String(take!(_result))\nend"
-    generator = Meta.parse(generator_code)
-
-    return Julja2ParsedTemplate(generator)        
+    root = RootNode()
+    build_tree!(template, 1, root, Vector{Julja2.TokenType}(), options)
+    return Julja2ParsedTemplate(build_code(root))        
 end
 
-function Julja2Template(template::Vector{UInt8};
-                    var_borders::BlockBorders=BlockBorders("{{", "}}"),
-                    operator_borders::BlockBorders=BlockBorders("{%", "%}"),
-                    templates_dir::String="./",
-                    ignore_missing_vars=true,
-                    allow_filename_change_dir=false)::Julja2ParsedTemplate
+function Julja2Template(
+    template::Vector{UInt8};
+    variable::BlockBorders=BlockBorders("{{", "}}"),
+    operator::BlockBorders=BlockBorders("{%", "%}"),
+    templates_dir::String="./",
+    ignore_missing=true,
+    allow_filename_change_dir=false,
+)::Julja2ParsedTemplate
 
-    return Julja2Template(String(template),
-    var_borders=var_borders,
-    operator_borders=operator_borders,
-    templates_dir=templates_dir,
-    ignore_missing_vars=ignore_missing_vars,   
-    allow_filename_change_dir=allow_filename_change_dir)
+    return Julja2Template(
+        String(template),
+        variable = variable,
+        operator = operator,
+        templates_dir = templates_dir,
+        ignore_missing = ignore_missing,
+        allow_filename_change_dir = allow_filename_change_dir,
+    )
 end
 
 macro julja2_template_str(content)
@@ -106,7 +109,7 @@ Renders template from given precompiled template with obj values.
 
 ## Arguments:
 - `template::String`: Parsed template.
-- `obj`: Is an object or Dict of arguments.
+- `obj`: Is an object or Dict of arguments to fill template with.
 
 ## Returns:
 - `Julja2ParsedTemplate`: The parsed template object.
@@ -140,7 +143,7 @@ Authors:
 ```
 """
 function julja2_render(template::Julja2ParsedTemplate, obj)::String
-    if typeof(obj) == Dict{String, Any}
+    if isa(obj, Dict{String, Any})
         fields = collect(keys(obj))
         obj_values = collect(values(obj))
     else 
@@ -148,9 +151,7 @@ function julja2_render(template::Julja2ParsedTemplate, obj)::String
         obj_values = [getfield(obj, field) for field in fields]
     end
 
-    
     let_block = Expr(:block)
-    
     for (field, value) in zip(fields, obj_values)
         push!(let_block.args, :(local $(Symbol(field)) = $value))
     end
@@ -159,30 +160,4 @@ function julja2_render(template::Julja2ParsedTemplate, obj)::String
     push!(let_block.args, Meta.parse("build_result_string()")) 
 
     return eval(let_block)
-end
-
-function _validate_options(options)
-    if typeof(options.var.left) != String || options.var.right == ""
-        error("left border of variable block must be a non empty string")
-    end
-    if typeof(options.var.right) != String || options.var.right == ""
-        error("right border of variable block must be a non empty string")
-    end
-    if typeof(options.operator.left) != String || options.operator.left == ""
-        error("left border of operators block must be a non empty string")
-    end
-    if typeof(options.operator.right) != String || options.operator.right == ""
-        error("right border of operators block must be a non empty string")
-    end
-end
-
-function _format_template_dir_path(templates_dir::String)::String
-    if templates_dir == ""
-        error("templates_dir must be a non empty string witn \"/\" in the end.")
-    end 
-    if templates_dir[end] != '/'
-        @warn "templates_dir not have \"/\" in the end, added \"/\" to the end"
-        return templates_dir * "/"
-    end
-    return templates_dir
 end

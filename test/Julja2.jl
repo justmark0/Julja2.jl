@@ -28,7 +28,8 @@ my_book = Book(
         <year>{{ year }}</year>
         <price>{{ price }}</price>
         <p>Author is {{ map_data["author"] }}. Link to source code: {{ map_data["code_link"] }}</p>
-        </book>""",
+        </book>
+        """,
     )
 
     @test Julja2.julja2_render(template, my_book) === """
@@ -41,7 +42,8 @@ my_book = Book(
     <year>2024</year>
     <price>49.99</price>
     <p>Author is Julia team. Link to source code: https://github.com/JuliaLang/julia</p>
-    </book>"""
+    </book>
+    """
 end
 
 @testset "Dict as variable source" begin
@@ -110,8 +112,8 @@ end
         [compat]
         ֎֎ for (name, version) in compat @
         [[[ name >>>> = [[[ version >>>>֎֎endfor@""",
-        var_borders=BlockBorders("[[[", ">>>>"),
-        operator_borders=BlockBorders("֎֎", "@"),
+        variable=BlockBorders("[[[", ">>>>"),
+        operator=BlockBorders("֎֎", "@"),
     )
 
     @test Julja2.julja2_render(template, cryptoapis) === """
@@ -204,7 +206,7 @@ end
 @testset "Missing variable test" begin
     let err = nothing
         try
-            template = Julja2.Julja2Template("""{{ text }}""", ignore_missing_vars=false)
+            template = Julja2.Julja2Template("""{{ text }}""", ignore_missing=false)
             Julja2.julja2_render(template, Dict{String, Int}())
         catch e
             err = e

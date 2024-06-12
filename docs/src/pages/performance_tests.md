@@ -1,6 +1,6 @@
 ## Performance Testing
 
-Here are the results of the performance tests between Jinja2, this library Julja2, and a library similar to Jinja2 written in Julia - Mustache.
+Here are the results of the performance tests between Jinja2, this library Julja2, and a library similar to [Jinja2](https://jinja.palletsprojects.com/) written in Julia - [Mustache](https://github.com/jverzani/Mustache.jl).
 
 ### How Tests Were Conducted
 
@@ -66,8 +66,8 @@ There were three tests: 10 int variable insertions, 100 int variable insertions,
 Here are the results:
 I split the results into two groups - fast and slow. This is because if I put all the results on the same graph, it would not be representative. Some results were around 1 ms while others were around 200 ms, so differences in the 2-3 ms range would not be noticeable to the viewer.
 
-![variable_insertion_slow_group](/docs/assets/variable_insertion_slow_group.png)
-![variable_insertion_fast_group](/docs/assets/variable_insertion_fast_group.png)
+![variable_insertion_slow_group](/docs/src/assets/variable_insertion_slow_group.png)
+![variable_insertion_fast_group](/docs/src/assets/variable_insertion_fast_group.png)
 
 As we can see, the difference between parsing the template each time for Julja2 is not that significant; in the 1000 case it is 40 ms, while for Jinja2 it is about 50 ms.
 
@@ -79,8 +79,8 @@ Test data:
 `"{% if true_statement %}some_string{% endif %}...{% if true_statement %}some_string{% endif %}"`.
 Once again, test sets consisted of 10 if statements, 100 if statements, and 1000 if statements.
 
-![if_condition_slow_group](/docs/assets/if_condition_slow_group.png)
-![if_condition_fast_group](/docs/assets/if_condition_fast_group.png)
+![if_condition_slow_group](/docs/src/assets/if_condition_slow_group.png)
+![if_condition_fast_group](/docs/src/assets/if_condition_fast_group.png)
 
 In these tests, we got similar results to variable insertion.
 
@@ -90,8 +90,8 @@ Test data:
 `"{% for i in range(10) %}some_string{% endfor %}...{% for i in range(10) %}some_string{% endfor %}"`.
 Test sets ranged from 10 for loops to 100 and 1000 for loops. They generated 10 times more strings than the number of for statements.
 
-![for_operator_slow_group](/docs/assets/for_operator_slow_group.png)
-![for_operator_fast_group](/docs/assets/for_operator_fast_group.png)
+![for_operator_slow_group](/docs/src/assets/for_operator_slow_group.png)
+![for_operator_fast_group](/docs/src/assets/for_operator_fast_group.png)
 
 We found that Julja2 was a little bit faster compared to Jinja2 with template parsing (3 -> 2.3). Interestingly, Julja2 on small data sets was even faster than Jinja2 with template parsing.
 

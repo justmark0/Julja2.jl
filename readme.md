@@ -1,10 +1,24 @@
-# Julja2
+# Julja2.jl
+
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://justmark0.github.io/Julja2.jl/stable/)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://justmark0.github.io/Julja2.jl/dev/)
+[![Build Status](https://github.com/justmark0/Julja2.jl/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/justmark0/Julja2.jl/actions/workflows/CI.yml?query=branch%3Amaster)
+[![Coverage](https://codecov.io/gh/justmark0/Julja2.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/justmark0/Julja2.jl)
+[![Registry](https://img.shields.io/badge/registry-General-4063d8)](https://github.com/JuliaRegistries/General)
 
 Julja2 is a slow library written in Julia that renders templates similar to [Jinja2](https://jinja.palletsprojects.com/en/3.1.x/).
 
 [Initial requirements.](https://github.com/bhftbootcamp/.github/issues/1)
 
-## Usage Example
+## Installation
+
+To install Julja2, simply use the Julia package manager:
+
+```julia
+] add Julja2
+```
+
+## Usage
 ```julia
 using Julja2
 
@@ -40,7 +54,7 @@ I chose the code generation approach because it was simpler to implement. My goa
 
 The template generation itself (`parse.jl` file) operates relatively quickly, even faster than Jinja2. In Mustache, template parsing and rendering are not separated, making it difficult to measure directly.
 
-For a detailed comparison, you can check [docs/performance_tests.md](/docs/performance_tests.md).
+For a detailed comparison, you can check [docs/pages/performance_tests.md](docs/src/pages/performance_tests.md).
 
 ## How Does It Work?
 
